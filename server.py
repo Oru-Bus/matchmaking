@@ -1,16 +1,16 @@
 import socket
 import termcolor
 import threading
+import pickle
 
 host, port = ('', 5566)
-clients = {}
-max_clients = 5
+clients = []
 
 # Fonction pour gérer les commandes du terminal
 def handle_commands():
     while True:
         command = input("")
-        if command.strip().lower() == "downsock":
+        if command.strip().lower() == "closesock":
             #Fermeture  du serveur
             server.close()
             print(termcolor.colored("Serveur arrêté", 'red'))
@@ -32,31 +32,19 @@ try:
         server.listen() #serveur en ecoute
         conn, address = server.accept() #connexion etablie
         
-        if len(clients) < max_clients:  #Vérifie le nombre de clients
-            for i in range(1, max_clients + 1):  #Regarde quel identifiant n'est pas utilisé
-                if i not in clients.values():
-                    clients[conn] = i
-                    break
-        else:
-            #Ferme la plus ancienne connexion
-            data = "Nombre de clients maximum atteint.".encode("utf8")
-            next(iter(clients.keys())).send(data)
-            clients[conn] = next(iter(clients.values()))
-            next(iter(clients.keys())).close()
-            del clients[next(iter(clients.keys()))]
-            
-        #attribution du numero au client
-        clientNumber = str(list(clients.values())[-1])
-        
         #reception du pseudo
-        data = conn.recv(1024)
+        datas = conn.recv(1024)
         #decodage du pseudo
-        clientName = data.decode("utf8")
-        print(f"Le client {clientName} vient de se connecter. Son numéro est : {clientNumber}.")
+        datas = pickle.loads(datas)
+        clientName, clientLevel = datas
         
-        #codage du clientNumber
-        data = clientNumber.encode("utf8")
-        #envoie des datas
-        conn.send(data)
+        #verification d'un match de niveau
+        for client in clients:
+            if client['clientLevel'] == int(clientLevel):
+                conn.sendall(pickle.dumps(client['clientName']))
+                client['clientConn'].sendall(pickle.dumps(clientName))
+        
+        #rajout du client dans la liste clients
+        clients.append({'clientConn': conn, 'clientIP': address[0], 'clientLocalPort': address[1], 'clientName': clientName, 'clientLevel': int(clientLevel)})
 except:
     print(termcolor.colored("Echec du démarrage du serveur", 'red'))
