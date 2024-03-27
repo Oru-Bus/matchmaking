@@ -4,7 +4,9 @@ import threading
 import pickle
 
 host, port = ('', 5566)
-clients = []
+clients = {}
+clientsInMatchmaking = []
+matchs = []
 
 # Fonction pour gérer les commandes du terminal
 def handle_commands():
@@ -38,13 +40,30 @@ try:
         datas = pickle.loads(datas)
         clientName, clientLevel = datas
         
-        #verification d'un match de niveau
-        for client in clients:
-            if client['clientLevel'] == int(clientLevel):
-                conn.sendall(pickle.dumps(client['clientName']))
-                client['clientConn'].sendall(pickle.dumps(clientName))
-        
         #rajout du client dans la liste clients
-        clients.append({'clientConn': conn, 'clientIP': address[0], 'clientLocalPort': address[1], 'clientName': clientName, 'clientLevel': int(clientLevel)})
+        
+        # Trouver la première clé manquante
+        nextKey = next((i for i in range(1, len(clients) + 2) if i not in clients), None)
+
+        if nextKey is not None:
+            clients[nextKey] = {'clientConn': conn, 'clientIP': address[0], 'clientLocalPort': address[1], 'clientName': clientName, 'clientLevel': int(clientLevel)}
+        
+        print(clientsInMatchmaking)
+                    
+        #verification d'un match de niveau
+        if len(clientsInMatchmaking)>0:
+            matchApproved = False
+            for clientId in clientsInMatchmaking:
+                if clients[clientId]['clientLevel'] == int(clientLevel):
+                    matchApproved = True
+                    clientsInMatchmaking.remove(clientId)
+                    conn.sendall(pickle.dumps(clients[clientId]['clientName']))
+                    clients[clientId]['clientConn'].sendall(pickle.dumps(clientName))
+                    break
+            if not matchApproved:
+                clientsInMatchmaking.append(nextKey)
+        else:
+            clientsInMatchmaking.append(nextKey)
+    
 except:
     print(termcolor.colored("Echec du démarrage du serveur", 'red'))
