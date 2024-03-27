@@ -14,8 +14,9 @@ try:
     
     clientName = input("Entrez votre pseudo :\n")
     clientLevel = input("Entrez votre niveau :\n")
+    nbrInMatch = input("Entrez le nombre de personnes avec qui vous voulez matcher :\n")
     #codage des datas
-    datas = [clientName, clientLevel]
+    datas = [clientName, clientLevel, nbrInMatch]
     datas = pickle.dumps(datas)
     #envoie des datas
     server.sendall(datas)
