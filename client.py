@@ -21,9 +21,17 @@ try:
     #envoie des datas
     server.sendall(datas)
     
-    datas = server.recv(1024)
-    matchName = pickle.loads(datas)
-    print(f"Vous avez matché avec {matchName} !")
+    matchmakingFinish = False
+    
+    while not matchmakingFinish:
+        datas = server.recv(1024)
+        datas = pickle.loads(datas)
+        try:
+            if int(datas) == int(nbrInMatch):
+                matchmakingFinish = True
+            print(f"Matchmaking..... {datas}/{nbrInMatch}", end='\r')
+        except:
+            print("problème")
     
 except ConnectionRefusedError:
     print(termcolor.colored("Le client n'a pas pu se connecter", 'red'))

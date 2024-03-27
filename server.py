@@ -62,11 +62,16 @@ try:
                     for match in matchs[clientNbrInMatch]:
                         if len(match)<clientNbrInMatch: #verification du nombre de personnes dans ce salon
                             match.append(newClientId)
+                            conn.sendall(pickle.dumps(len(match)))
+                            for id in match:
+                                clients[id]['clientConn'].sendall(pickle.dumps(len(match)))
                             break
                 else:
                     matchs[clientNbrInMatch] = [[newClientId]]
+                    conn.sendall(pickle.dumps('1'))
             else:
                 matchs[clientNbrInMatch] = [[newClientId]]
+                conn.sendall(pickle.dumps('1'))
         else: #client non redirigé vers des salons de matchmaking
             if len(clientsIdInMatchmaking)>0:
                 matchApproved = False
