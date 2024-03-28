@@ -54,17 +54,29 @@ try:
         if newClientId is not None:
             clients[newClientId] = {'clientConn': conn, 'clientIP': address[0], 'clientLocalPort': address[1], 'clientName': clientName, 'clientLevel': int(clientLevel), 'nbrInMatch': clientNbrInMatch}
         
-                    
+        print("a")
         #verification d'un match de niveau
         if clientNbrInMatch>1: #le client est redirigé vers des salons de matchmaking
+            print("b")
             if clientNbrInMatch in matchs: #si le nombre de personnes souhaité par le nouveau client a déjà eu des matchmakings
-                if len(matchs[clientNbrInMatch][0])>0: #si le nombre de personnes souhaité par le nouveau client a des matchmaking
-                    for match in matchs[clientNbrInMatch]:
-                        if len(match)<clientNbrInMatch: #verification du nombre de personnes dans ce salon
-                            match.append(newClientId)
-                            conn.sendall(pickle.dumps(len(match)))
-                            for id in match:
-                                clients[id]['clientConn'].sendall(pickle.dumps(len(match)))
+                print("c")
+                if len(matchs[clientNbrInMatch])>0: #si le nombre de personnes souhaité par le nouveau client a des matchmaking
+                    print("d")
+                    for match in range(len(matchs[clientNbrInMatch])):
+                        if len(matchs[clientNbrInMatch][match])<clientNbrInMatch: #verification du nombre de personnes dans ce salon
+                            matchs[clientNbrInMatch][match].append(newClientId)
+                            conn.sendall(pickle.dumps(len(matchs[clientNbrInMatch][match])))
+                            for id in matchs[clientNbrInMatch][match]:
+                                clients[id]['clientConn'].sendall(pickle.dumps(len(matchs[clientNbrInMatch][match])))
+                            if len(matchs[clientNbrInMatch][match])==clientNbrInMatch: #verification salon de matchmaking complet
+                                
+                                #création de la room
+                                newRoomId = next((i for i in range(1, len(rooms) + 2) if i not in rooms), None) #id de room disponible
+                                if newRoomId is not None:
+                                    rooms[newRoomId] = matchs[clientNbrInMatch][match]
+                                
+                                #suppression du matchmaking dans matchs
+                                matchs[clientNbrInMatch].pop(match)
                             break
                 else:
                     matchs[clientNbrInMatch] = [[newClientId]]
@@ -89,5 +101,6 @@ try:
         
         print(f"matchs : {matchs}")
         print(f"clientsIdInMatchmaking : {clientsIdInMatchmaking}")
+        print(f"rooms : {rooms}")
 except:
     print(termcolor.colored("Echec du démarrage du serveur", 'red'))
